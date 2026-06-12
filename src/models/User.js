@@ -1,89 +1,105 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
-const userSchema = new mongoose.Schema({
-  firstname: {
-    type: String,
-    required: true,
-    minlength: 4,
-    maxlength: 20
+const userSchema = new mongoose.Schema(
+  {
+    firstname: {
+      type: String,
+      required: true,
+      minLength: 4,
+      maxLength: 50,
+    },
+    lastname: {
+      type: String,
+    },
+    email: {
+      type: String,
+      lowercase: true,
+      required: true,
+      unique: true,
+      trim: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Invalid email address: " + value);
+        }
+      },
+    },
+    password: {
+      type: String,
+      required: true,
+      validate(value) {
+        if (!validator.isStrongPassword(value)) {
+          throw new Error("Enter a Strong Password: " + value);
+        }
+      },
+    },
+    age: {
+      type: Number,
+      min: 18,
+    },
+    gender: {
+      type: String,
+      enum: {
+        values: ["male", "female", "other"],
+        message: `{VALUE} is not a valid gender type`,
+      },
+      // validate(value) {
+      //   if (!["male", "female", "others"].includes(value)) {
+      //     throw new Error("Gender data is not valid");
+      //   }
+      // },
+    },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    membershipType: {
+      type: String,
+    },
+    photoUrl: {
+      type: String,
+      default: "https://geographyandyou.com/images/user-profile.png",
+      validate(value) {
+        if (!validator.isURL(value)) {
+          throw new Error("Invalid Photo URL: " + value);
+        }
+      },
+    },
+    about: {
+      type: String,
+      default: "This is a default about of the user!",
+    },
+    skills: {
+      type: [String],
+    },
   },
-
-  lastname: {
-    type: String
-  },
-
-  password: {
-    type: String,
-    required: true,
-  },
-
-  age: {
-    type: Number,
-    min: 18
-  },
-
-  gender: {
-    type: String,
-    validate(value) {
-      if (!["male", "female", "others"].includes(value)) {
-        throw new Error("Gender Data is not valid");
-      }
-    }
-  },
-
-  photoUrl: {
-    type: String,
-    default: "https://www.pngall.com/wp-content/uploads/5/User-Profile-PNG-Picture.png"
-  },
-
-  about: {
-    type: String,
-    default: "This is a default about section."
-  },
-
-  skills: {
-    type: [String]
-  },
-
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-    validate(value){
-      if(!validator.isEmail(value)){
-        throw new Error("Invalid email format");
-      }
-    }
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true
-});
+);
 
-userSchema.pre('save', async function(next) {
+userSchema.methods.getJWT = async function () {
   const user = this;
-  if (!user.isModified('password')) {
-    return next();
-  }
 
-  const saltRounds = 10;
-  user.password = await bcrypt.hash(user.password, saltRounds);
-  next();
-});
+  const token = await jwt.sign({ _id: user._id }, "DEV@COM$790", {
+    expiresIn: "1d",
+  });
 
-userSchema.methods.getJWT = async function() {
-  const user = this;
-  const token = await jwt.sign({ _id: user._id }, "DEV@COM$790", { expiresIn: "1h" });
   return token;
 };
 
-userSchema.methods.validatePassword = async function(password) {
+userSchema.methods.validatePassword = async function (passwordInputByUser) {
   const user = this;
-  return await bcrypt.compare(password, user.password);
+  const passwordHash = user.password;
+
+  const isPasswordValid = await bcrypt.compare(
+    passwordInputByUser,
+    passwordHash
+  );
+
+  return isPasswordValid;
 };
 
 module.exports = mongoose.model("User", userSchema);
