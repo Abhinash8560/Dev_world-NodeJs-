@@ -5,14 +5,17 @@ const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
   {
+
     firstname: {
       type: String,
       required: true,
       minLength: 4,
       maxLength: 50,
+      index:true
     },
     lastname: {
       type: String,
+      index:true
     },
     email: {
       type: String,
@@ -41,6 +44,10 @@ const userSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
+      enum:{
+        values:["male","female","other"],
+        message:`{VALUE} is not a valid gender type`
+      },
       enum: {
         values: ["male", "female", "other"],
         message: `{VALUE} is not a valid gender type`,
@@ -79,6 +86,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// userSchema.index({ firstname: 1});
 
 userSchema.methods.getJWT = async function () {
   const user = this;

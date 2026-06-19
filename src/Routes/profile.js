@@ -1,8 +1,9 @@
 const express=require('express');
 const profileRouter=express.Router();
-// const User=require('../models/User');
+const User=require('../models/User');
 const {UserAuth}=require('../middleware/auth');
 const {validateProfileUpdateData}=require('../utils/validation');
+const bcrypt = require("bcrypt");
 
 
 // cookie profile API - GET /profile/view - to get the profile of the logged-in user
@@ -39,6 +40,33 @@ try {
     "Error occurred while updating user profile: " + err.message
   );
 }
+});
+
+//for forgot password - PATCH /profile/forgotpassword
+profileRouter.post("/forgotpassword", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    user.password = passwordHash;
+
+    await user.save();
+
+    res.json({
+      message: "Password updated successfully!"
+    });
+  } catch (err) {
+    res.status(400).send(
+      "Error occurred while updating password: " + err.message
+    );
+  }
 });
 
 module.exports=profileRouter;

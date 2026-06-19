@@ -12,10 +12,13 @@
 
 
 */Connection Request Router
-    - Post/request/review/accepted/:userId
-    - Post/request/review/rejected/:userId
-    - Post/request/send/interested/:userId
-    - Post/request/send/ignored/:userId
+    - Post/request/send/:status/:userId
+    - Post/request/review/:status/:requestId
+
+
+    <!-- - Post/request/review/accepted/:requestId
+    - Post/request/review/rejected/:requestId -->
+
 
 
 *User Router
